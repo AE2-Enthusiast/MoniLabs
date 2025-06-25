@@ -9,27 +9,34 @@ import com.gregtechceu.gtceu.api.machine.MachineDefinition;
 import com.gregtechceu.gtceu.api.recipe.GTRecipeType;
 import com.gregtechceu.gtceu.api.registry.registrate.GTRegistrate;
 import com.gregtechceu.gtceu.common.data.GTCreativeModeTabs;
-
+import com.tterrag.registrate.util.entry.RegistryEntry;
 import net.minecraft.client.Minecraft;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.CreativeModeTab;
 import net.minecraft.world.item.Items;
+import net.minecraftforge.client.event.RegisterParticleProvidersEvent;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.eventbus.api.IEventBus;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.event.lifecycle.FMLClientSetupEvent;
 import net.minecraftforge.fml.event.lifecycle.FMLCommonSetupEvent;
 import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
+import net.minecraftforge.registries.ForgeRegistries;
+import net.minecraftforge.registries.RegisterEvent;
+import net.neganote.monilabs.client.InitParticleFactories;
+import net.neganote.monilabs.client.render.effects.ParticleTypes;
+import net.neganote.monilabs.client.render.effects.PrismFX;
 import net.neganote.monilabs.common.block.MoniBlocks;
 import net.neganote.monilabs.common.item.MoniItems;
 import net.neganote.monilabs.common.machine.MoniMachines;
 import net.neganote.monilabs.config.MoniConfig;
 import net.neganote.monilabs.data.MoniDataGen;
 import net.neganote.monilabs.gtbridge.MoniRecipeTypes;
-
-import com.tterrag.registrate.util.entry.RegistryEntry;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+
+import stone.mae2.api.client.trails.CloudChamberUtil;
+import stone.mae2.api.client.trails.SimpleTrail;
 
 @Mod(MoniLabs.MOD_ID)
 public class MoniLabs {
@@ -55,6 +62,17 @@ public class MoniLabs {
         modEventBus.addListener(this::addMaterialRegistries);
         modEventBus.addListener(this::addMaterials);
         modEventBus.addListener(this::modifyMaterials);
+        modEventBus.addListener((RegisterEvent event) -> {
+            event
+                .register(ForgeRegistries.PARTICLE_TYPES.getRegistryKey(),
+                    MoniLabs.id("chroma_background"),
+                    () -> ParticleTypes.CHROMA_BACKGROUND);
+        });
+        modEventBus.addListener((RegisterParticleProvidersEvent event) -> {
+            event
+                .registerSpriteSet(ParticleTypes.CHROMA_BACKGROUND,
+                    PrismFX.PositionalColor::new);
+        });
         modEventBus.addGenericListener(GTRecipeType.class, this::registerRecipeTypes);
         modEventBus.addGenericListener(MachineDefinition.class, this::registerMachines);
         modEventBus.addGenericListener(CoverDefinition.class, this::registerCovers);
@@ -63,6 +81,11 @@ public class MoniLabs {
         // If we want to use annotations to register event listeners,
         // we need to register our object like this!
         MinecraftForge.EVENT_BUS.register(this);
+
+        CloudChamberUtil
+            .registerBackgroundTrail(MoniLabs.id("chroma"),
+                new SimpleTrail(20, 0, .1, .1,
+                    ParticleTypes.CHROMA_BACKGROUND));
     }
 
     public static void init() {
@@ -86,6 +109,7 @@ public class MoniLabs {
 
     private void clientSetup(final FMLClientSetupEvent event) {
         LOGGER.info("Hey, we're on Minecraft version {}!", Minecraft.getInstance().getLaunchedVersion());
+        InitParticleFactories.init();
     }
 
     // You MUST have this for custom materials.
